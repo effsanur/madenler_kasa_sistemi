@@ -5,6 +5,6 @@ class AnasayfaView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(child: Text('Anasayfa'));
+    return Center(child: Text('Ana Sayfa'));
   }
 }

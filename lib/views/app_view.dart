@@ -8,13 +8,14 @@ class AppView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      body: navigationShell,
       appBar: _appBarWidget(),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         indicatorColor: Colors.transparent,
         onDestinationSelected: navigationShell.goBranch,
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home), label: 'Anasayfa'),
+          NavigationDestination(icon: Icon(Icons.home), label: 'Ana Sayfa'),
           NavigationDestination(
             icon: Icon(Icons.account_balance_wallet),
             label: 'Kasa',
