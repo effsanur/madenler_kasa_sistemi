@@ -6,12 +6,12 @@ class AppTheme {
   static ThemeData get lightTheme => ThemeData(
     scaffoldBackgroundColor: Colors.white,
     colorScheme: const ColorScheme.light(
-      primary: Color(0xFF6200EE),
+      primary: Color(0xFFE4C811),
       secondary: Color(0xFF03DAC6),
       surface: Colors.white,
       onSurface: Colors.black,
       error: Color(0xFFB00020),
-      tertiary: Color(0xFF018786),
+      tertiary: Color(0xFF6A6757),
     ),
     iconButtonTheme: IconButtonThemeData(
       style: IconButton.styleFrom(foregroundColor: const Color(0xFF6200EE)),
