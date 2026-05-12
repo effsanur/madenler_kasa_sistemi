@@ -4,6 +4,60 @@ import 'package:madenler_kasa_sistemi/app/state.dart';
 class KasaView extends StatelessWidget {
   const KasaView({super.key});
 
+  Widget _buildKasaMadenRow(MadenItem item) {
+    final assetName = _madenAssetName(item.name);
+    if (assetName != null) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Birim Fiyatı: ${item.unitPriceDisplay}'),
+                Text('Saflık: ${item.purity}'),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/$assetName',
+            width: 72,
+            height: 72,
+            fit: BoxFit.contain,
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Birim Fiyatı: ${item.unitPriceDisplay}'),
+        Text('Saflık: ${item.purity}'),
+      ],
+    );
+  }
+
+  String? _madenAssetName(String name) {
+    switch (name) {
+      case 'Altın':
+        return 'altin.png';
+      case 'Gümüş':
+        return 'gümüs.png';
+      case 'Platin':
+        return 'platin.png';
+      case 'İnci':
+        return 'inci.png';
+      case 'Elmas':
+        return 'elmas.png';
+      case 'Yakut':
+        return 'yakut.png';
+      default:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -40,10 +94,10 @@ class KasaView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text('Birim Fiyatı: ${item.unitPriceDisplay}'),
+                      _buildKasaMadenRow(item),
+                      const SizedBox(height: 8),
                       Text('Miktar: ${item.weightDisplay}'),
                       Text('Toplam: ${item.totalPriceDisplay}'),
-                      Text('Saflık: ${item.purity}'),
                     ],
                   ),
                 ),
