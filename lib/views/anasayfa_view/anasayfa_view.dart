@@ -250,7 +250,12 @@ class _AnasayfaViewState extends State<AnasayfaView> {
                                     backgroundColor: Theme.of(
                                       context,
                                     ).colorScheme.primary,
+                                    foregroundColor: Colors.black,
                                     minimumSize: const Size.fromHeight(44),
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                   ),
                                   onPressed: () {
                                     final quantity = _parseQuantity(index);

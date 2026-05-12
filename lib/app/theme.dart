@@ -6,7 +6,7 @@ class AppTheme {
   static ThemeData get lightTheme => ThemeData(
     scaffoldBackgroundColor: Colors.white,
     colorScheme: const ColorScheme.light(
-      primary: Color(0xFFE4C811),
+      primary: Color.fromARGB(255, 241, 210, 72),
       secondary: Color(0xFF03DAC6),
       surface: Colors.white,
       onSurface: Colors.black,
