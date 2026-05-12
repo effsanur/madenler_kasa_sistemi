@@ -50,6 +50,14 @@ class _AnasayfaViewState extends State<AnasayfaView> {
       quantity: 1,
       purity: 'VS1',
     ),
+    MadenItem(
+      name: 'Yakut',
+      unitPrice: 2200,
+      priceUnitLabel: 'TL/karat',
+      unit: 'karat',
+      quantity: 1,
+      purity: 'AAA',
+    ),
   ];
 
   final List<bool> _expanded = List<bool>.filled(_madenler.length, false);
@@ -81,6 +89,60 @@ class _AnasayfaViewState extends State<AnasayfaView> {
 
     final total = _madenler[index].unitPrice * amount;
     return '${total.toStringAsFixed(2)} TL';
+  }
+
+  Widget _buildMadenInfoRow(MadenItem item) {
+    final assetName = _madenAssetName(item.name);
+    if (assetName != null) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Birim Fiyatı: ${item.unitPriceDisplay}'),
+                Text('Saflık: ${item.purity}'),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Image.asset(
+            'assets/images/$assetName',
+            width: 72,
+            height: 72,
+            fit: BoxFit.contain,
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Birim Fiyatı: ${item.unitPriceDisplay}'),
+        Text('Saflık: ${item.purity}'),
+      ],
+    );
+  }
+
+  String? _madenAssetName(String name) {
+    switch (name) {
+      case 'Altın':
+        return 'altin.png';
+      case 'Gümüş':
+        return 'gümüs.png';
+      case 'Platin':
+        return 'platin.png';
+      case 'İnci':
+        return 'inci.png';
+      case 'Elmas':
+        return 'elmas.png';
+      case 'Yakut':
+        return 'yakut.png';
+      default:
+        return null;
+    }
   }
 
   @override
@@ -162,8 +224,7 @@ class _AnasayfaViewState extends State<AnasayfaView> {
                                 ),
                               ),
                               const SizedBox(height: 12),
-                              Text('Birim Fiyatı: ${item.unitPriceDisplay}'),
-                              Text('Saflık: ${item.purity}'),
+                              _buildMadenInfoRow(item),
                               if (_expanded[index]) ...[
                                 const SizedBox(height: 14),
                                 TextField(
