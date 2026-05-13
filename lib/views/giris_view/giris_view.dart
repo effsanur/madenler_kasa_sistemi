@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:madenler_kasa_sistemi/app/auth_messages.dart';
 import 'package:madenler_kasa_sistemi/app/router.dart';
+import 'package:madenler_kasa_sistemi/app/state.dart';
 
 class GirisView extends StatefulWidget {
   const GirisView({super.key});
@@ -49,6 +50,7 @@ class _GirisViewState extends State<GirisView> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      await addLog('Giriş yapıldı: ${_emailController.text.trim()}');
       if (!mounted) return;
       context.go(AppRoute.anasayfa);
     } on FirebaseAuthException catch (e) {

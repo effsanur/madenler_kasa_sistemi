@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:madenler_kasa_sistemi/app/router.dart';
+import 'package:madenler_kasa_sistemi/app/state.dart';
 
 class ProfilView extends StatelessWidget {
   const ProfilView({super.key});
@@ -123,12 +124,21 @@ class ProfilView extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          Text(
-                            '₺1.842.560',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
+                          ValueListenableBuilder<List<MadenItem>>(
+                            valueListenable: kasaItems,
+                            builder: (context, items, child) {
+                              double total = 0;
+                              for (var item in items) {
+                                total += item.unitPrice * item.quantity;
+                              }
+                              return Text(
+                                '₺${total.toStringAsFixed(2)}',
+                                style: theme.textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -147,10 +157,50 @@ class ProfilView extends StatelessWidget {
             const SizedBox(height: 12),
             _profileMenuItem(
               context,
-              icon: Icons.notifications,
-              title: 'Bildirimler',
-              subtitle: '5 okunmamış',
+              icon: Icons.history,
+              title: 'Log Kayıtları',
+              subtitle: 'Son işlemleri gör',
               accentColor: Colors.orange.shade50,
+              onTap: () async {
+                final logs = await getLogs();
+                if (context.mounted) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Log Kayıtları'),
+                      content: SizedBox(
+                        width: double.maxFinite,
+                        child: logs.isEmpty ? const Text('Henüz log bulunmuyor.') : ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: logs.length,
+                          itemBuilder: (context, index) {
+                            final parts = logs[index].split('|');
+                            final time = parts[0];
+                            final msg = parts.length > 1 ? parts[1] : '';
+                            try {
+                              final dt = DateTime.parse(time);
+                              final formatted = '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(msg, style: const TextStyle(fontSize: 14)),
+                                subtitle: Text(formatted, style: const TextStyle(fontSize: 12)),
+                              );
+                            } catch (_) {
+                              return ListTile(title: Text(logs[index]));
+                            }
+                          },
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Kapat'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
             ),
             const SizedBox(height: 12),
             _profileMenuItem(
@@ -159,6 +209,39 @@ class ProfilView extends StatelessWidget {
               title: 'Profili Düzenle',
               subtitle: '',
               accentColor: Colors.blue.shade50,
+              onTap: () {
+                final controller = TextEditingController(text: user?.displayName);
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Profili Düzenle'),
+                    content: TextField(
+                      controller: controller,
+                      decoration: const InputDecoration(labelText: 'Ad Soyad'),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('İptal'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          if (user != null) {
+                            await user.updateDisplayName(controller.text.trim());
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Profil güncellendi. Değişikliklerin yansıması için uygulamayı yeniden başlatın veya çıkış yapıp tekrar girin.')),
+                              );
+                            }
+                          }
+                        },
+                        child: const Text('Kaydet'),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 12),
             _profileMenuItem(
@@ -167,9 +250,32 @@ class ProfilView extends StatelessWidget {
               title: 'Çıkış Yap',
               subtitle: '',
               accentColor: Colors.red.shade50,
-              onTap: () async {
-                await FirebaseAuth.instance.signOut();
-                if (context.mounted) context.go(AppRoute.giris);
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Çıkış Yap'),
+                    content: const Text('Çıkış yapmak istediğinize emin misiniz?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Çıkış yapma'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+                        onPressed: () async {
+                          await addLog('Çıkış yapıldı.');
+                          await FirebaseAuth.instance.signOut();
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            context.go(AppRoute.giris);
+                          }
+                        },
+                        child: const Text('Çıkış yap'),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
           ],

@@ -9,7 +9,7 @@ class AppView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      appBar: _appBarWidget(),
+      appBar: _appBarWidget(context),
       bottomNavigationBar: NavigationBarTheme(
         data: NavigationBarThemeData(
           labelTextStyle: WidgetStateTextStyle.resolveWith((states) {
@@ -69,20 +69,9 @@ class AppView extends StatelessWidget {
     );
   }
 
-  AppBar _appBarWidget() {
+  AppBar _appBarWidget(BuildContext context) {
     return AppBar(
       title: const Text('Değerli Madenler ve Kasa Sistemi'),
-      actions: [
-        IconButton(
-          icon: const Icon(
-            Icons.settings,
-            color: Color.fromARGB(255, 218, 197, 16),
-          ),
-          onPressed: () {
-            // Ayarlar sayfasına yönlendirme işlemi
-          },
-        ),
-      ],
     );
   }
 }

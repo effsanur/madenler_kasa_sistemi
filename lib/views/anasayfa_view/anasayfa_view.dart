@@ -60,34 +60,42 @@ class _AnasayfaViewState extends State<AnasayfaView> {
     ),
   ];
 
-  final List<bool> _expanded = List<bool>.filled(_madenler.length, false);
-  late final List<TextEditingController> _quantityControllers = _madenler
-      .map(
-        (item) => TextEditingController(text: item.quantity.toStringAsFixed(0)),
-      )
-      .toList();
+  String _searchQuery = '';
+  final Map<String, bool> _expanded = {};
+  final Map<String, TextEditingController> _quantityControllers = {};
+
+  @override
+  void initState() {
+    super.initState();
+    for (var item in _madenler) {
+      _expanded[item.name] = false;
+      _quantityControllers[item.name] = TextEditingController(text: item.quantity.toStringAsFixed(0));
+    }
+  }
 
   @override
   void dispose() {
-    for (final controller in _quantityControllers) {
+    for (final controller in _quantityControllers.values) {
       controller.dispose();
     }
     super.dispose();
   }
 
-  double _parseQuantity(int index) {
-    final raw = _quantityControllers[index].text.trim().replaceAll(',', '.');
+  double _parseQuantity(MadenItem item) {
+    final controller = _quantityControllers[item.name];
+    if (controller == null) return 0;
+    final raw = controller.text.trim().replaceAll(',', '.');
     final value = double.tryParse(raw);
     return value == null || value <= 0 ? 0 : value;
   }
 
-  String _totalFor(int index) {
-    final amount = _parseQuantity(index);
+  String _totalFor(MadenItem item) {
+    final amount = _parseQuantity(item);
     if (amount <= 0) {
       return 'Lütfen geçerli bir değer girin.';
     }
 
-    final total = _madenler[index].unitPrice * amount;
+    final total = item.unitPrice * amount;
     return '${total.toStringAsFixed(2)} TL';
   }
 
@@ -154,6 +162,11 @@ class _AnasayfaViewState extends State<AnasayfaView> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             TextField(
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val;
+                });
+              },
               decoration: InputDecoration(
                 labelText: 'Maden Arama',
                 labelStyle: TextStyle(
@@ -173,122 +186,133 @@ class _AnasayfaViewState extends State<AnasayfaView> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: ListView.separated(
-                itemCount: _madenler.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final item = _madenler[index];
-                  final totalText = _totalFor(index);
-                  return Card(
-                    elevation: 2,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: AnimatedSize(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeInOut,
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(minHeight: 140),
-                        child: Padding(
-                          padding: const EdgeInsets.all(14),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              InkWell(
-                                borderRadius: BorderRadius.circular(8),
-                                onTap: () {
-                                  setState(() {
-                                    _expanded[index] = !_expanded[index];
-                                  });
-                                },
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Icon(
-                                      _expanded[index]
-                                          ? Icons.expand_less
-                                          : Icons.expand_more,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              _buildMadenInfoRow(item),
-                              if (_expanded[index]) ...[
-                                const SizedBox(height: 14),
-                                TextField(
-                                  controller: _quantityControllers[index],
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                  decoration: InputDecoration(
-                                    labelText: 'Alınan Ağırlık / Miktar',
-                                    suffixText: item.unit,
-                                    border: const OutlineInputBorder(),
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                                const SizedBox(height: 12),
-                                Text('Toplam Tutar: $totalText'),
-                                const SizedBox(height: 12),
-                                ElevatedButton.icon(
-                                  icon: const Icon(Icons.add_shopping_cart),
-                                  label: const Text('Kasaya Ekle'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Theme.of(
-                                      context,
-                                    ).colorScheme.primary,
-                                    foregroundColor: Colors.black,
-                                    minimumSize: const Size.fromHeight(44),
-                                    elevation: 2,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    final quantity = _parseQuantity(index);
-                                    if (quantity <= 0) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Lütfen geçerli bir miktar girin.',
+              child: Builder(
+                builder: (context) {
+                  final filteredMadenler = _madenler.where((item) {
+                    if (_searchQuery.trim().isEmpty) return true;
+                    return item.name.toLowerCase().contains(_searchQuery.trim().toLowerCase());
+                  }).toList();
+
+                  return ListView.separated(
+                    itemCount: filteredMadenler.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = filteredMadenler[index];
+                      final totalText = _totalFor(item);
+                      final isExpanded = _expanded[item.name] ?? false;
+
+                      return Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: AnimatedSize(
+                          duration: const Duration(milliseconds: 200),
+                          curve: Curves.easeInOut,
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 140),
+                            child: Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(8),
+                                    onTap: () {
+                                      setState(() {
+                                        _expanded[item.name] = !isExpanded;
+                                      });
+                                    },
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          item.name,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
                                           ),
                                         ),
-                                      );
-                                      return;
-                                    }
-                                    addToKasa(
-                                      item.copyWith(quantity: quantity),
-                                    );
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          '${item.name} kasaya eklendi.',
+                                        Icon(
+                                          isExpanded
+                                              ? Icons.expand_less
+                                              : Icons.expand_more,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.primary,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildMadenInfoRow(item),
+                                  if (isExpanded) ...[
+                                    const SizedBox(height: 14),
+                                    TextField(
+                                      controller: _quantityControllers[item.name],
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                            decimal: true,
+                                          ),
+                                      decoration: InputDecoration(
+                                        labelText: 'Alınan Ağırlık / Miktar',
+                                        suffixText: item.unit,
+                                        border: const OutlineInputBorder(),
+                                      ),
+                                      onChanged: (_) => setState(() {}),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text('Toplam Tutar: $totalText'),
+                                    const SizedBox(height: 12),
+                                    ElevatedButton.icon(
+                                      icon: const Icon(Icons.add_shopping_cart),
+                                      label: const Text('Kasaya Ekle'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        foregroundColor: Colors.black,
+                                        minimumSize: const Size.fromHeight(44),
+                                        elevation: 2,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
                                         ),
                                       ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ],
+                                      onPressed: () {
+                                        final quantity = _parseQuantity(item);
+                                        if (quantity <= 0) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Lütfen geçerli bir miktar girin.',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        addToKasa(
+                                          item.copyWith(quantity: quantity),
+                                        );
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '${item.name} kasaya eklendi.',
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    },
                   );
                 },
               ),
