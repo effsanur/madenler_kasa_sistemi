@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:madenler_kasa_sistemi/app/router.dart';
 
 class ProfilView extends StatelessWidget {
   const ProfilView({super.key});
@@ -122,6 +124,7 @@ class ProfilView extends StatelessWidget {
 
             const SizedBox(height: 12),
             _profileMenuItem(
+              context,
               icon: Icons.notifications,
               title: 'Bildirimler',
               subtitle: '5 okunmamış',
@@ -129,6 +132,7 @@ class ProfilView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _profileMenuItem(
+              context,
               icon: Icons.edit,
               title: 'Profili Düzenle',
               subtitle: '',
@@ -136,10 +140,12 @@ class ProfilView extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _profileMenuItem(
+              context,
               icon: Icons.exit_to_app,
               title: 'Çıkış Yap',
               subtitle: '',
               accentColor: Colors.red.shade50,
+              onTap: () => context.go(AppRoute.giris),
             ),
           ],
         ),
@@ -198,11 +204,13 @@ class ProfilView extends StatelessWidget {
     );
   }
 
-  Widget _profileMenuItem({
+  Widget _profileMenuItem(
+    BuildContext context, {
     required IconData icon,
     required String title,
     required String subtitle,
     required Color accentColor,
+    VoidCallback? onTap,
   }) {
     return Card(
       elevation: 2,
@@ -224,7 +232,7 @@ class ProfilView extends StatelessWidget {
           size: 18,
           color: Colors.black45,
         ),
-        onTap: () {},
+        onTap: onTap ?? () {},
       ),
     );
   }
