@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "551556928600",
+    "project_id": "madenler-kasa-sistemi",
+    "storage_bucket": "madenler-kasa-sistemi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:551556928600:android:c4f055f6db303bf25d262d",
+        "android_client_info": {
+          "package_name": "com.example.madenler_kasa_sistemi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZ1x5wwi-mm0WKzJSo8e7g0eW2wNO1uW8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
