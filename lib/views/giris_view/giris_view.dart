@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:madenler_kasa_sistemi/app/auth_messages.dart';
 import 'package:madenler_kasa_sistemi/app/router.dart';
 
 class GirisView extends StatefulWidget {
@@ -17,6 +19,7 @@ class _GirisViewState extends State<GirisView> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _rememberMe = false;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -36,6 +39,31 @@ class _GirisViewState extends State<GirisView> {
       suffixIcon: suffixIcon,
       suffixIconConstraints: const BoxConstraints(minHeight: 48),
     );
+  }
+
+  Future<void> _signIn() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() => _submitting = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      if (!mounted) return;
+      context.go(AppRoute.anasayfa);
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(messageForFirebaseAuth(e))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Giriş yapılamadı. Tekrar deneyin.')),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   @override
@@ -203,11 +231,7 @@ class _GirisViewState extends State<GirisView> {
                         ),
                         const SizedBox(height: 8),
                         ElevatedButton(
-                          onPressed: () {
-                            if (_formKey.currentState?.validate() ?? false) {
-                              context.go(AppRoute.anasayfa);
-                            }
-                          },
+                          onPressed: _submitting ? null : _signIn,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primary,
                             foregroundColor: Colors.black,
@@ -217,7 +241,16 @@ class _GirisViewState extends State<GirisView> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Giriş Yap'),
+                          child: _submitting
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.black87,
+                                  ),
+                                )
+                              : const Text('Giriş Yap'),
                         ),
                         const SizedBox(height: 22),
                         Row(

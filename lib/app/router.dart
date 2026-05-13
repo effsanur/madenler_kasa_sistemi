@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:madenler_kasa_sistemi/app/go_router_refresh.dart';
 import 'package:madenler_kasa_sistemi/views/app_view.dart';
 import 'package:madenler_kasa_sistemi/views/anasayfa_view/anasayfa_view.dart';
 import 'package:madenler_kasa_sistemi/views/giris_view/giris_view.dart';
@@ -8,6 +10,10 @@ import 'package:madenler_kasa_sistemi/views/kayit_view/kayit_view.dart';
 import 'package:madenler_kasa_sistemi/views/profil_view/profil_view.dart';
 
 final _routerKey = GlobalKey<NavigatorState>();
+
+final _authRefresh = GoRouterRefreshStream(
+  FirebaseAuth.instance.authStateChanges(),
+);
 
 class AppRoute {
   AppRoute._();
@@ -21,7 +27,20 @@ class AppRoute {
 
 final GoRouter router = GoRouter(
   navigatorKey: _routerKey,
-  initialLocation: AppRoute.anasayfa,
+  initialLocation: AppRoute.giris,
+  refreshListenable: _authRefresh,
+  redirect: (context, state) {
+    final user = FirebaseAuth.instance.currentUser;
+    final path = state.uri.path;
+    final onAuthPage = path == AppRoute.giris || path == AppRoute.kayit;
+
+    if (user == null) {
+      if (onAuthPage) return null;
+      return AppRoute.giris;
+    }
+    if (onAuthPage) return AppRoute.anasayfa;
+    return null;
+  },
   routes: [
     GoRoute(
       path: AppRoute.giris,

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:madenler_kasa_sistemi/app/router.dart';
@@ -5,11 +6,32 @@ import 'package:madenler_kasa_sistemi/app/router.dart';
 class ProfilView extends StatelessWidget {
   const ProfilView({super.key});
 
+  String _initials(User? user) {
+    final name = user?.displayName?.trim();
+    if (name != null && name.isNotEmpty) {
+      final parts = name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+      if (parts.length >= 2) {
+        return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+      }
+      return name.length >= 2
+          ? name.substring(0, 2).toUpperCase()
+          : name[0].toUpperCase();
+    }
+    final email = user?.email ?? '';
+    if (email.isNotEmpty) return email[0].toUpperCase();
+    return '?';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     final tertiary = theme.colorScheme.tertiary;
+    final user = FirebaseAuth.instance.currentUser;
+    final displayName =
+        user?.displayName?.trim().isNotEmpty == true
+            ? user!.displayName!.trim()
+            : (user?.email ?? 'Kullanıcı');
 
     return SingleChildScrollView(
       child: Padding(
@@ -35,7 +57,7 @@ class ProfilView extends StatelessWidget {
                       radius: 40,
                       backgroundColor: primary,
                       child: Text(
-                        'AY',
+                        _initials(user),
                         style: theme.textTheme.headlineSmall?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -44,7 +66,7 @@ class ProfilView extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Ahmet Yılmaz',
+                      displayName,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
@@ -145,7 +167,10 @@ class ProfilView extends StatelessWidget {
               title: 'Çıkış Yap',
               subtitle: '',
               accentColor: Colors.red.shade50,
-              onTap: () => context.go(AppRoute.giris),
+              onTap: () async {
+                await FirebaseAuth.instance.signOut();
+                if (context.mounted) context.go(AppRoute.giris);
+              },
             ),
           ],
         ),

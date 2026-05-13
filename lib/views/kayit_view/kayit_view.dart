@@ -1,5 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:madenler_kasa_sistemi/app/auth_messages.dart';
 import 'package:madenler_kasa_sistemi/app/router.dart';
 
 class KayitView extends StatefulWidget {
@@ -19,6 +21,7 @@ class _KayitViewState extends State<KayitView> {
   final _passwordAgainController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscurePasswordAgain = true;
+  bool _submitting = false;
 
   @override
   void dispose() {
@@ -47,6 +50,37 @@ class _KayitViewState extends State<KayitView> {
       context.pop();
     } else {
       context.go(AppRoute.giris);
+    }
+  }
+
+  Future<void> _register() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() => _submitting = true);
+    try {
+      final name = _nameController.text.trim();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      await cred.user?.updateDisplayName(name);
+
+      if (!mounted) return;
+      context.go(AppRoute.anasayfa);
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(messageForFirebaseAuth(e))),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Kayıt tamamlanamadı. Tekrar deneyin.')),
+      );
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -234,11 +268,7 @@ class _KayitViewState extends State<KayitView> {
                         ),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () {
-                            if (_formKey.currentState?.validate() ?? false) {
-                              context.go(AppRoute.anasayfa);
-                            }
-                          },
+                          onPressed: _submitting ? null : _register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: primary,
                             foregroundColor: Colors.black,
@@ -248,7 +278,16 @@ class _KayitViewState extends State<KayitView> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text('Kayıt Ol'),
+                          child: _submitting
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.black87,
+                                  ),
+                                )
+                              : const Text('Kayıt Ol'),
                         ),
                         const SizedBox(height: 22),
                         Row(
