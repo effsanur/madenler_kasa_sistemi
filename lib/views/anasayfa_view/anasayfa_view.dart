@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:madenler_kasa_sistemi/app/state.dart';
 
@@ -9,68 +10,13 @@ class AnasayfaView extends StatefulWidget {
 }
 
 class _AnasayfaViewState extends State<AnasayfaView> {
-  static final List<MadenItem> _madenler = [
-    MadenItem(
-      name: 'Altın',
-      unitPrice: 1234,
-      priceUnitLabel: 'TL/g',
-      unit: 'g',
-      quantity: 1,
-      purity: '99.9%',
-    ),
-    MadenItem(
-      name: 'Gümüş',
-      unitPrice: 28,
-      priceUnitLabel: 'TL/g',
-      unit: 'g',
-      quantity: 1,
-      purity: '99.5%',
-    ),
-    MadenItem(
-      name: 'Platin',
-      unitPrice: 950,
-      priceUnitLabel: 'TL/g',
-      unit: 'g',
-      quantity: 1,
-      purity: '99.8%',
-    ),
-    MadenItem(
-      name: 'İnci',
-      unitPrice: 1500,
-      priceUnitLabel: 'TL/adet',
-      unit: 'adet',
-      quantity: 1,
-      purity: 'Doğal',
-    ),
-    MadenItem(
-      name: 'Elmas',
-      unitPrice: 3000,
-      priceUnitLabel: 'TL/karat',
-      unit: 'karat',
-      quantity: 1,
-      purity: 'VS1',
-    ),
-    MadenItem(
-      name: 'Yakut',
-      unitPrice: 2200,
-      priceUnitLabel: 'TL/karat',
-      unit: 'karat',
-      quantity: 1,
-      purity: 'AAA',
-    ),
-  ];
-
   String _searchQuery = '';
   final Map<String, bool> _expanded = {};
   final Map<String, TextEditingController> _quantityControllers = {};
 
-  @override
-  void initState() {
-    super.initState();
-    for (var item in _madenler) {
-      _expanded[item.name] = false;
-      _quantityControllers[item.name] = TextEditingController(text: item.quantity.toStringAsFixed(0));
-    }
+  bool get _isAdmin {
+    final email = FirebaseAuth.instance.currentUser?.email;
+    return email == 'admin@madenler.com';
   }
 
   @override
@@ -81,9 +27,19 @@ class _AnasayfaViewState extends State<AnasayfaView> {
     super.dispose();
   }
 
+  TextEditingController _getController(String name) {
+    if (!_quantityControllers.containsKey(name)) {
+      _quantityControllers[name] = TextEditingController(text: '1');
+    }
+    return _quantityControllers[name]!;
+  }
+
+  bool _isExpanded(String name) {
+    return _expanded[name] ?? false;
+  }
+
   double _parseQuantity(MadenItem item) {
-    final controller = _quantityControllers[item.name];
-    if (controller == null) return 0;
+    final controller = _getController(item.name);
     final raw = controller.text.trim().replaceAll(',', '.');
     final value = double.tryParse(raw);
     return value == null || value <= 0 ? 0 : value;
@@ -153,9 +109,101 @@ class _AnasayfaViewState extends State<AnasayfaView> {
     }
   }
 
+  void _showAddMadenDialog() {
+    final nameController = TextEditingController();
+    final priceController = TextEditingController();
+    final priceUnitLabelController = TextEditingController(text: 'TL/g');
+    final unitController = TextEditingController(text: 'g');
+    final purityController = TextEditingController(text: '99.9%');
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Yeni Maden Ekle'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Maden Adı'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: priceController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(labelText: 'Birim Fiyatı'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: priceUnitLabelController,
+                  decoration: const InputDecoration(labelText: 'Fiyat Birimi (Örn: TL/g)'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: unitController,
+                  decoration: const InputDecoration(labelText: 'Miktar Birimi (Örn: g)'),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: purityController,
+                  decoration: const InputDecoration(labelText: 'Saflık (Örn: 99.9%)'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                final priceRaw = priceController.text.trim().replaceAll(',', '.');
+                final price = double.tryParse(priceRaw);
+                final priceUnit = priceUnitLabelController.text.trim();
+                final unit = unitController.text.trim();
+                final purity = purityController.text.trim();
+
+                if (name.isNotEmpty && price != null && price > 0) {
+                  final newItem = MadenItem(
+                    name: name,
+                    unitPrice: price,
+                    priceUnitLabel: priceUnit,
+                    unit: unit,
+                    quantity: 1, // default view quantity
+                    purity: purity,
+                  );
+                  addAnasayfaMaden(newItem);
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('$name başarıyla eklendi.')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Lütfen geçerli bilgiler girin.')),
+                  );
+                }
+              },
+              child: const Text('Ekle'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: _isAdmin
+          ? FloatingActionButton(
+              onPressed: _showAddMadenDialog,
+              child: const Icon(Icons.add),
+            )
+          : null,
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 16),
         child: Column(
@@ -186,9 +234,10 @@ class _AnasayfaViewState extends State<AnasayfaView> {
             ),
             const SizedBox(height: 12),
             Expanded(
-              child: Builder(
-                builder: (context) {
-                  final filteredMadenler = _madenler.where((item) {
+              child: ValueListenableBuilder<List<MadenItem>>(
+                valueListenable: anasayfaMadenler,
+                builder: (context, madenler, _) {
+                  final filteredMadenler = madenler.where((item) {
                     if (_searchQuery.trim().isEmpty) return true;
                     return item.name.toLowerCase().contains(_searchQuery.trim().toLowerCase());
                   }).toList();
@@ -199,7 +248,8 @@ class _AnasayfaViewState extends State<AnasayfaView> {
                     itemBuilder: (context, index) {
                       final item = filteredMadenler[index];
                       final totalText = _totalFor(item);
-                      final isExpanded = _expanded[item.name] ?? false;
+                      final isExpanded = _isExpanded(item.name);
+                      final controller = _getController(item.name);
 
                       return Card(
                         elevation: 2,
@@ -224,8 +274,7 @@ class _AnasayfaViewState extends State<AnasayfaView> {
                                       });
                                     },
                                     child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           item.name,
@@ -238,9 +287,7 @@ class _AnasayfaViewState extends State<AnasayfaView> {
                                           isExpanded
                                               ? Icons.expand_less
                                               : Icons.expand_more,
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.primary,
+                                          color: Theme.of(context).colorScheme.primary,
                                         ),
                                       ],
                                     ),
@@ -250,11 +297,10 @@ class _AnasayfaViewState extends State<AnasayfaView> {
                                   if (isExpanded) ...[
                                     const SizedBox(height: 14),
                                     TextField(
-                                      controller: _quantityControllers[item.name],
-                                      keyboardType:
-                                          const TextInputType.numberWithOptions(
-                                            decimal: true,
-                                          ),
+                                      controller: controller,
+                                      keyboardType: const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
                                       decoration: InputDecoration(
                                         labelText: 'Alınan Ağırlık / Miktar',
                                         suffixText: item.unit,
@@ -269,9 +315,7 @@ class _AnasayfaViewState extends State<AnasayfaView> {
                                       icon: const Icon(Icons.add_shopping_cart),
                                       label: const Text('Kasaya Ekle'),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
+                                        backgroundColor: Theme.of(context).colorScheme.primary,
                                         foregroundColor: Colors.black,
                                         minimumSize: const Size.fromHeight(44),
                                         elevation: 2,
@@ -282,13 +326,9 @@ class _AnasayfaViewState extends State<AnasayfaView> {
                                       onPressed: () {
                                         final quantity = _parseQuantity(item);
                                         if (quantity <= 0) {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
+                                          ScaffoldMessenger.of(context).showSnackBar(
                                             const SnackBar(
-                                              content: Text(
-                                                'Lütfen geçerli bir miktar girin.',
-                                              ),
+                                              content: Text('Lütfen geçerli bir miktar girin.'),
                                             ),
                                           );
                                           return;
@@ -298,9 +338,7 @@ class _AnasayfaViewState extends State<AnasayfaView> {
                                         );
                                         ScaffoldMessenger.of(context).showSnackBar(
                                           SnackBar(
-                                            content: Text(
-                                              '${item.name} kasaya eklendi.',
-                                            ),
+                                            content: Text('${item.name} kasaya eklendi.'),
                                           ),
                                         );
                                       },

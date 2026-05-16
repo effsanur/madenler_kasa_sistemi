@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // Firebase çekirdek paketi
 import 'package:madenler_kasa_sistemi/app/router.dart';
 import 'package:madenler_kasa_sistemi/app/theme.dart';
+import 'package:madenler_kasa_sistemi/app/state.dart';
 
 void main() async {
   // Flutter widget ağacının düzgün bağlandığından emin oluyoruz
@@ -11,6 +12,8 @@ void main() async {
   // Manuel kurulum yaptığın için ek parametreye gerek duymadan
   // google-services.json dosyasını otomatik okuyacaktır.
   await Firebase.initializeApp();
+
+  await loadAnasayfaMadenler();
 
   runApp(const MyApp());
 }
